@@ -15,6 +15,7 @@ main_obj.location[2] = 1
 
 
 for i in range(100):  
+    
     x_val = random.random() * span - (span/2)
     y_val = random.random() * span - (span/2)
     xy_avg = (abs(x_val) + abs(y_val))/2

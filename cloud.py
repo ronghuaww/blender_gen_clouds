@@ -16,8 +16,6 @@ s = bpy.ops.mesh.primitive_uv_sphere_add(segments=4, ring_count=4, radius=0.2)
 main_obj = bpy.context.active_object
 main_obj.location[2] = 1
 
-
-<<<<<<< HEAD
 for i in range(100):     
     x_val = random.random() * span - (span/2)
     y_val = random.random() * span - (span/2)

@@ -13,7 +13,8 @@ main_obj = bpy.context.active_object
 main_obj.location[2] = 1
 
 
-for i in range(100):  
+for i in range(100): 
+    # size NEEDS TO STAY INSIDE or else number keep getting smaller  
     size = 2
     percent = 5/10
     

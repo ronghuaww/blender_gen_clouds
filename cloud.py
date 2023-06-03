@@ -2,6 +2,7 @@ import bpy
 import random 
 import math
 
+<<<<<<< HEAD
 span = 10 
 decay_rad = 5/10
 
@@ -16,6 +17,7 @@ main_obj = bpy.context.active_object
 main_obj.location[2] = 1
 
 
+<<<<<<< HEAD
 for i in range(100):     
     x_val = random.random() * span - (span/2)
     y_val = random.random() * span - (span/2)
@@ -38,6 +40,12 @@ for i in range(100):
     loop_obj.location[0] = x_val
     loop_obj.location[1] = y_val
     loop_obj.location[2] = z_val
+    
+    
+    
+    loop_obj.scale[0] = size
+    loop_obj.scale[1] = size 
+    loop_obj.scale[2] = size
     
     mod_bool = loop_obj.modifiers.new("boolean", 'BOOLEAN') 
     mod_bool.operation = 'UNION'

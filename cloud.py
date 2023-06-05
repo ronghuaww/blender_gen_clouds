@@ -23,13 +23,14 @@ class MESH_sphere_clouds(bpy.types.Operator):
     span_y: bpy.props.FloatProperty(
         name="Y", 
         description="Length of the Clouds in the Y-direction", 
-        default=5
+        default=10
     )
 
     radius: bpy.props.IntProperty(
         name="Maximum Radius", 
         description="Maximum Radius of the Spheres",
-        default=2
+        default=2, 
+        min=2
     )
 
     decay_rad: bpy.props.FloatProperty(
@@ -42,7 +43,8 @@ class MESH_sphere_clouds(bpy.types.Operator):
     min_segment: bpy.props.IntProperty(
         name="Segment", 
         description="Minmum number of Segments for Each Sphere",
-        default=3
+        default=3, 
+        min=3
     )
 
     growth_seg: bpy.props.FloatProperty(
@@ -55,7 +57,7 @@ class MESH_sphere_clouds(bpy.types.Operator):
     midpoint_x: bpy.props.FloatProperty(
         name="Midpoint X-Coordinate", 
         description="X-Coordinate for where the radius is the highest",
-        default=2
+        default=0
     )
 
     midpoint_y: bpy.props.FloatProperty(
@@ -66,11 +68,13 @@ class MESH_sphere_clouds(bpy.types.Operator):
 
 
     def execute (self, context): 
+        min_radius = 0.2
+
         # default circle where all the new ones are merge with
         s = bpy.ops.mesh.primitive_uv_sphere_add(
-            segments=4, 
-            ring_count=4, 
-            radius=0.2)
+            segments=3, 
+            ring_count=3, 
+            radius=min_radius)
         main_obj = bpy.context.active_object
         main_obj.location[2] = 1
 
@@ -86,8 +90,8 @@ class MESH_sphere_clouds(bpy.types.Operator):
 
             # small rad are not generated 
             #absoultely killing my computer 
-            if (rad > 0.2): 
-                z_val = rad + ((random.random() * (rad * 2)) - (rad))
+            if (rad > min_radius): 
+                z_val = rad + ((random.random() * (rad)) - (rad/2))
 
                 # y = ab^x (a is the min segment; b is percentage (from 1 to 1.5)
                 # (x is size; y gives us the respective segment)

@@ -81,34 +81,38 @@ class MESH_sphere_clouds(bpy.types.Operator):
             
             # y = ab^x (a is size, b percent, x is xy_avg)
             # (x is xy_avg; y is the size/radius)
-            rad = 2
+            rad = self.radius
             rad = rad * (self.decay_rad ** xy_avg)
-            z_val = rad + ((random.random() * (rad * 2)) - (rad))
 
-            # y = ab^x (a is the min segment; b is percentage (from 1 to 1.5)
-            # (x is size; y gives us the respective segment)
-            seg_val = int(self.min_segment * (self.growth_seg ** rad))
+            # small rad are not generated 
+            #absoultely killing my computer 
+            if (rad > 0.2): 
+                z_val = rad + ((random.random() * (rad * 2)) - (rad))
 
-            bpy.ops.mesh.primitive_uv_sphere_add(
-                segments=seg_val, 
-                ring_count=seg_val, 
-                radius=rad)
-            loop_obj = bpy.context.active_object
-            
-            loop_obj.location[0] = x_val
-            loop_obj.location[1] = y_val
-            loop_obj.location[2] = z_val
-            
-            mod_bool = loop_obj.modifiers.new("boolean", 'BOOLEAN') 
-            mod_bool.operation = 'UNION'
-            mod_bool.object = main_obj
-            
-            bpy.ops.object.modifier_apply(modifier="boolean")
-            
-            loop_obj.select_set(False)
-            main_obj.select_set(True)
-            bpy.ops.object.delete()
-            main_obj = loop_obj
+                # y = ab^x (a is the min segment; b is percentage (from 1 to 1.5)
+                # (x is size; y gives us the respective segment)
+                seg_val = int(self.min_segment * (self.growth_seg ** rad))
+
+                bpy.ops.mesh.primitive_uv_sphere_add(
+                    segments=seg_val, 
+                    ring_count=seg_val, 
+                    radius=rad)
+                loop_obj = bpy.context.active_object
+                
+                loop_obj.location[0] = x_val
+                loop_obj.location[1] = y_val
+                loop_obj.location[2] = z_val
+                
+                mod_bool = loop_obj.modifiers.new("boolean", 'BOOLEAN') 
+                mod_bool.operation = 'UNION'
+                mod_bool.object = main_obj
+                
+                bpy.ops.object.modifier_apply(modifier="boolean")
+                
+                loop_obj.select_set(False)
+                main_obj.select_set(True)
+                bpy.ops.object.delete()
+                main_obj = loop_obj
 
         return {'FINISHED'}
         

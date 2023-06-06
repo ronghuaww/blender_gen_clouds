@@ -84,7 +84,7 @@ class MESH_sphere_clouds(bpy.types.Operator):
             xy_avg = (abs(x_val + self.midpoint_x) + abs(y_val + self.midpoint_y))/2
             
             # y = ab^x (a is size, b percent, x is xy_avg)
-            # (x is xy_avg; y is the size/radius)
+            # (x is xy_avg; y is the size/radius)git
             rad = self.radius
             rad = rad * (self.decay_rad ** xy_avg)
 

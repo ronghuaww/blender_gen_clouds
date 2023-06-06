@@ -40,7 +40,7 @@ class MESH_sphere_clouds(bpy.types.Operator):
 
     decay_rad: bpy.props.FloatProperty(
         name="Radius Decay Factor", 
-        description="Exponential Decay of the radius as it gets further from the center", 
+        description="Exponential Decay of the radius for each spheres", 
         default= 1/2,
         min=0, max= 1
     )
@@ -54,7 +54,7 @@ class MESH_sphere_clouds(bpy.types.Operator):
 
     growth_seg: bpy.props.FloatProperty(
         name="Segment Growth Factor", 
-        description="Exponential Growth in the number of segments as it gets further from the center", 
+        description="Exponential Growth in the number of segments", 
         default=3,
         min=1, max=16
     )
@@ -72,11 +72,9 @@ class MESH_sphere_clouds(bpy.types.Operator):
         default=3
     )
 
-    x_vals_prev = []
-    y_vals_prev = []
-    z_vals_prev = []
-
-    min_radius = 0.2
+    x_list = []
+    y_list = []
+    z_list = []
 
 
     # @classmethod
@@ -93,86 +91,68 @@ class MESH_sphere_clouds(bpy.types.Operator):
             self.span_x_prev = self.span_x
             self.span_y_prev = self.span_y
 
-            self.x_vals_prev.clear()
-            self.y_vals_prev.clear()
-            self.z_vals_prev.clear()
+            self.x_list.clear()
+            self.y_list.clear()
+            self.z_list.clear()
 
-            for i in range(self.num_spheres):   
-
-                x_val = random.random() * self.span_x - (self.span_x/2)
-                y_val = random.random() * self.span_y - (self.span_y/2)
-                z_val = random.random()
-
-                xy_avg = (abs(x_val + self.midpoint_x) + abs(y_val + self.midpoint_y))/2
-                
-                # y = ab^x (a is size, b percent, x is xy_avg)
-                # (x is xy_avg; y is the size/radius)
-                rad = self.radius
-                rad = rad * (self.decay_rad ** xy_avg)
-
-                # small rad are not generated 
-                # absoultely not letting it kill my computer 
-                if (rad > self.min_radius): 
-                    self.x_vals_prev.append(x_val)
-                    self.y_vals_prev.append(y_val)
-                    self.z_vals_prev.append(z_val)
-                    z_val = rad + ((z_val * (rad)) - (rad/2))
-
-                    # y = ab^x (a is the min segment; b is percentage (from 1 to 1.5)
-                    # (x is size; y gives us the respective segment)
-                    seg_val = int(self.min_segment * (self.growth_seg ** rad))
-
-                    bpy.ops.mesh.primitive_uv_sphere_add(
-                        segments=seg_val, 
-                        ring_count=seg_val, 
-                        radius=rad)
-                    loop_obj = bpy.context.active_object
-                    
-                    loop_obj.location[0] = x_val
-                    loop_obj.location[1] = y_val
-                    loop_obj.location[2] = z_val
+            clouds_gen(self.num_spheres, self.span_x, self.span_y, 
+                       self.midpoint_x, self.midpoint_y, self.radius, 
+                       self.decay_rad, self.min_segment, self.growth_seg, 
+                       True, self.x_list, self.y_list, self.z_list)
 
 
         # if its not the regen vals, check what is changed 
-        if (self.midpoint_x != self.midpoint_x_prev 
-            or self.midpoint_y != self.midpoint_y_prev):
-
-            self.midpoint_x_prev = self.midpoint_x
-            self.midpoint_y_prev = self.midpoint_y
-
-            for i in range(len(self.x_vals_prev)): 
-                print(len(self.x_vals_prev))
-                x_val = self.x_vals_prev[i]
-                y_val = self.y_vals_prev[i]
-                z_val = self.z_vals_prev[i]
-                xy_avg = (abs(x_val + self.midpoint_x) + abs(y_val + self.midpoint_y))/2
-                
-                # y = ab^x (a is size, b percent, x is xy_avg)
-                # (x is xy_avg; y is the size/radius)
-                rad = self.radius
-                rad = rad * (self.decay_rad ** xy_avg)
-
-                # small rad are not generated 
-                #absoultely killing my computer 
-                if (rad > self.min_radius): 
-                    z_val = rad + ((z_val * (rad)) - (rad/2))
-
-                    # y = ab^x (a is the min segment; b is percentage (from 1 to 1.5)
-                    # (x is size; y gives us the respective segment)
-                    seg_val = int(self.min_segment * (self.growth_seg ** rad))
-
-                    bpy.ops.mesh.primitive_uv_sphere_add(
-                        segments=seg_val, 
-                        ring_count=seg_val, 
-                        radius=rad)
-                    loop_obj = bpy.context.active_object
-                    
-                    loop_obj.location[0] = x_val
-                    loop_obj.location[1] = y_val
-                    loop_obj.location[2] = z_val
+        else:
+            clouds_gen(self.num_spheres, self.span_x, self.span_y, 
+                       self.midpoint_x, self.midpoint_y, self.radius, 
+                       self.decay_rad, self.min_segment, self.growth_seg, 
+                       False, self.x_list, self.y_list, self.z_list)
 
 
         return {'FINISHED'}
+    
+
+def clouds_gen(num_spheres, span_x, span_y, midpoint_x, midpoint_y, radius, 
+               decay_rad, min_segment, growth_seg, gen_bool, 
+               x_list, y_list, z_list): 
+               
+    min_radius = 0.2
+    total = num_spheres if gen_bool else len(x_list)
+
+    for i in range(total): 
+
+        x_val = random.random() * span_x - (span_x/2) 
+        y_val = random.random() * span_y - (span_y/2) 
+        z_val = random.random() 
+        if (not gen_bool): 
+            x_val, y_val, z_val = x_list[i], y_list[i], z_list[i]
+
+        xy_avg = (abs(x_val + midpoint_x) + abs(y_val + midpoint_y))/2
+        
+        # y = ab^x (a is size, b percent, x is xy_avg)
+        # (x is xy_avg; y is the size/radius)
+        rad = radius * (decay_rad ** xy_avg)
+
+        # small rad are not generated 
+        # absoultely not letting it kill my computer 
+        if (rad > min_radius): 
+
+            if (gen_bool): 
+                x_list.append(x_val)
+                y_list.append(y_val)
+                z_list.append(z_val)
+
+            z_val = rad + ((z_val * (rad)) - (rad/2))
+
+            # y = ab^x (a is the min segment; b is percentage)
+            # (x is size; y gives us the respective segment)
+            seg_val = int(min_segment * (growth_seg ** rad))
+
+            bpy.ops.mesh.primitive_uv_sphere_add(
+                segments=seg_val, 
+                ring_count=seg_val, 
+                radius=rad,
+                location=(x_val, y_val, z_val))
         
 def register(): 
     bpy.utils.register_class(MESH_sphere_clouds)

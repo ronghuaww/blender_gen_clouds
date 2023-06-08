@@ -82,52 +82,45 @@ class MESH_sphere_clouds(bpy.types.Operator):
     def execute (self, context): 
         gen_bool = True
 
-        if(self.num_spheres_prev != self.num_spheres 
-            or self.span_x_prev != self.span_x
-            or self.span_y_prev != self.span_y):
+        if (self.num_spheres != self.num_spheres_prev 
+            or self.span_x != self.span_x_prev 
+            or self.span_y != self.span_y_prev):
+            
             self.num_spheres_prev = self.num_spheres 
             self.span_x_prev = self.span_x
             self.span_y_prev = self.span_y
 
             self.xyz.clear()
+        
+        else: 
+            gen_bool = not gen_bool
 
-        clouds_gen(self.num_spheres, self.span_x, self.span_y, 
+        self.clouds_gen(self.num_spheres, self.span_x, self.span_y, 
                        self.midpoint_x, self.midpoint_y, self.radius, 
                        self.decay_rad, self.min_segment, self.growth_seg, 
-                       True, self.xyz)
-
-
-        # if its not the regen vals, check what is changed 
-        else:
-            clouds_gen(self.num_spheres, self.span_x, self.span_y, 
-                       self.midpoint_x, self.midpoint_y, self.radius, 
-                       self.decay_rad, self.min_segment, self.growth_seg, 
-                       False, self.x_list, self.y_list, self.z_list)
-
+                       gen_bool, self.xyz)
 
         return {'FINISHED'}
     
+    def clouds_gen(self, num_spheres, span_x, span_y, midpoint_x, midpoint_y, 
+                   radius, decay_rad, min_segment, growth_seg, gen_bool, xyz): 
+                
+        min_radius = 0.2
+        total = num_spheres if gen_bool else len(xyz)
 
-def clouds_gen(num_spheres, span_x, span_y, midpoint_x, midpoint_y, radius, 
-               decay_rad, min_segment, growth_seg, gen_bool, 
-               x_list, y_list, z_list): 
-               
-    min_radius = 0.2
-    total = num_spheres if gen_bool else len(x_list)
+        for i in range(total): 
 
-    for i in range(total): 
+            x_val = random.random() * span_x - (span_x/2) 
+            y_val = random.random() * span_y - (span_y/2) 
+            z_val = random.random() 
+            if (not gen_bool): 
+                x_val, y_val, z_val = xyz[i][0], xyz[i][1], xyz[i][2]
 
-        x_val = random.random() * span_x - (span_x/2) 
-        y_val = random.random() * span_y - (span_y/2) 
-        z_val = random.random() 
-        if (not gen_bool): 
-            x_val, y_val, z_val = x_list[i], y_list[i], z_list[i]
-
-        xy_avg = (abs(x_val + midpoint_x) + abs(y_val + midpoint_y))/2
-        
-        # y = ab^x (a is size, b percent, x is xy_avg)
-        # (x is xy_avg; y is the size/radius)
-        rad = radius * (decay_rad ** xy_avg)
+            xy_avg = (abs(x_val + midpoint_x) + abs(y_val + midpoint_y))/2
+            
+            # y = ab^x (a is size, b percent, x is xy_avg)
+            # (x is xy_avg; y is the size/radius)
+            rad = radius * (decay_rad ** xy_avg)
 
             # small rad are not generated 
             # absoultely not letting it kill my computer 

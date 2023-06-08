@@ -72,9 +72,7 @@ class MESH_sphere_clouds(bpy.types.Operator):
         default=3
     )
 
-    x_list = []
-    y_list = []
-    z_list = []
+    xyz = []
 
 
     # @classmethod
@@ -82,45 +80,73 @@ class MESH_sphere_clouds(bpy.types.Operator):
     #     return context.area.type == 'VIEW_3D'
 
     def execute (self, context): 
+        gen_bool = True
 
-        # default circle where all the new ones are merge with
-        s = bpy.ops.mesh.primitive_uv_sphere_add(
-            segments=3, 
-            ring_count=3, 
-            radius=min_radius)
-        main_obj = bpy.context.active_object
-        main_obj.location[2] = 1
+        if(self.num_spheres_prev != self.num_spheres 
+            or self.span_x_prev != self.span_x
+            or self.span_y_prev != self.span_y):
+            self.num_spheres_prev = self.num_spheres 
+            self.span_x_prev = self.span_x
+            self.span_y_prev = self.span_y
 
-        for i in range(self.num_spheres):     
-            x_val = random.random() * self.span_x - (self.span_x/2)
-            y_val = random.random() * self.span_y - (self.span_y/2)
-            xy_avg = (abs(x_val + self.midpoint_x) + abs(y_val + self.midpoint_y))/2
-            
-            # y = ab^x (a is size, b percent, x is xy_avg)
-            # (x is xy_avg; y is the size/radius)
-            rad = self.radius
-            rad = rad * (self.decay_rad ** xy_avg)
+            self.xyz.clear()
 
-        # small rad are not generated 
-        # absoultely not letting it kill my computer 
-        if (rad > min_radius): 
+        clouds_gen(self.num_spheres, self.span_x, self.span_y, 
+                       self.midpoint_x, self.midpoint_y, self.radius, 
+                       self.decay_rad, self.min_segment, self.growth_seg, 
+                       True, self.xyz)
 
-            if (gen_bool): 
-                x_list.append(x_val)
-                y_list.append(y_val)
-                z_list.append(z_val)
 
-            z_val = rad + ((z_val * (rad)) - (rad/2))
+        # if its not the regen vals, check what is changed 
+        else:
+            clouds_gen(self.num_spheres, self.span_x, self.span_y, 
+                       self.midpoint_x, self.midpoint_y, self.radius, 
+                       self.decay_rad, self.min_segment, self.growth_seg, 
+                       False, self.x_list, self.y_list, self.z_list)
 
-            # y = ab^x (a is the min segment; b is percentage)
-            # (x is size; y gives us the respective segment)
-            seg_val = int(min_segment * (growth_seg ** rad))
 
-            bpy.ops.mesh.primitive_uv_sphere_add(
-                segments=seg_val, 
-                ring_count=seg_val, 
-                radius=rad,
-                location=(x_val, y_val, z_val))
+        return {'FINISHED'}
+    
+
+def clouds_gen(num_spheres, span_x, span_y, midpoint_x, midpoint_y, radius, 
+               decay_rad, min_segment, growth_seg, gen_bool, 
+               x_list, y_list, z_list): 
+               
+    min_radius = 0.2
+    total = num_spheres if gen_bool else len(x_list)
+
+    for i in range(total): 
+
+        x_val = random.random() * span_x - (span_x/2) 
+        y_val = random.random() * span_y - (span_y/2) 
+        z_val = random.random() 
+        if (not gen_bool): 
+            x_val, y_val, z_val = x_list[i], y_list[i], z_list[i]
+
+        xy_avg = (abs(x_val + midpoint_x) + abs(y_val + midpoint_y))/2
+        
+        # y = ab^x (a is size, b percent, x is xy_avg)
+        # (x is xy_avg; y is the size/radius)
+        rad = radius * (decay_rad ** xy_avg)
+
+            # small rad are not generated 
+            # absoultely not letting it kill my computer 
+            if (rad > min_radius): 
+
+                if (gen_bool): 
+                    xyz.append([x_val, y_val, z_val])
+
+                z_val = rad + ((z_val * (rad)) - (rad/2))
+
+                # y = ab^x (a is the min segment; b is percentage)
+                # (x is size; y gives us the respective segment)
+                seg_val = int(min_segment * (growth_seg ** rad))
+
+                bpy.ops.mesh.primitive_uv_sphere_add(
+                    segments=seg_val, 
+                    ring_count=seg_val, 
+                    radius=rad,
+                    location=(x_val, y_val, z_val))
         
 def register(): 
     bpy.utils.register_class(MESH_sphere_clouds)

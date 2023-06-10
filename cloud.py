@@ -2,23 +2,7 @@ import bpy
 import random 
 import math
 
-class MESH_OT_sphere_clouds(bpy.types.Operator):
-    """lots of spheres for some fluffy clouds"""
-    bl_idname = "mesh.sphere_clouds"
-    bl_label = "Sphere Clouds"
-    bl_options = {'REGISTER', 'UNDO'}
-
-    action: bpy.props.EnumProperty(
-        name="functions", 
-        description="Steps in buttons",
-        items=[('CREATE_SPHERES', 'Create Spheres', 'establish cloud shape'),
-               ('MERGE_UNION', 'Merge', 'merge all spheres into one mesh')]
-    )
-    
-    num_spheres_prev = 0
-    span_x_prev = 0
-    span_y_prev = 0
-
+class properties_sphere_clouds(bpy.types.PropertyGroup):
     num_spheres: bpy.props.IntProperty(
         name="Count", 
         description="Number of Spheres",
@@ -68,6 +52,23 @@ class MESH_OT_sphere_clouds(bpy.types.Operator):
         soft_min=-15/2, soft_max=15/2
     )
 
+class MESH_OT_sphere_clouds(bpy.types.Operator):
+    """lots of spheres for some fluffy clouds"""
+    bl_idname = "mesh.sphere_clouds"
+    bl_label = "Sphere Clouds"
+    bl_options = {'REGISTER', 'UNDO'}
+
+    action: bpy.props.EnumProperty(
+        name="functions", 
+        description="Steps in buttons",
+        items=[('CREATE_SPHERES', 'Create Spheres', 'establish cloud shape'),
+               ('MERGE_UNION', 'Merge', 'merge all spheres into one mesh')]
+    )
+    
+    num_spheres_prev = 0
+    span_x_prev = 0
+    span_y_prev = 0
+
     xyz = []
     names = []
 
@@ -76,47 +77,49 @@ class MESH_OT_sphere_clouds(bpy.types.Operator):
     def poll(cls, context): 
         return context.area.type == 'VIEW_3D'
 
-    def draw(self, context):
-        if self.action == 'CREATE_SPHERES':
-            layout = self.layout
-            # text 
-            layout.label(text = "Sphere Cloudssss")
-            # button 
-            # layout.operator('mesh.sphere_clouds', text='Sphere Clouds')
-            layout.column().prop(self, "num_spheres", text="Count")
-            layout.column().prop(self, "span_x", text="X Span")
-            layout.column().prop(self, "span_y", text="Y Span")
-            layout.column().prop(self, "radius", text="Radius")
-            layout.column().prop(self, "decay_rad", text="Decay Factor")
-            layout.column().prop(self, "midpoint_x", text="X Midpoint")
-            layout.column().prop(self, "midpoint_y", text="Y Midpoint")
+    # def draw(self, context):
+    #     if self.action == 'CREATE_SPHERES':
+    #         layout = self.layout
+    #         # text 
+    #         layout.label(text = "Sphere Cloudssss")
+    #         # button 
+    #         # layout.operator('mesh.sphere_clouds', text='Sphere Clouds')
+    #         layout.column().prop(self, "num_spheres", text="Count")
+    #         layout.column().prop(self, "span_x", text="X Span")
+    #         layout.column().prop(self, "span_y", text="Y Span")
+    #         layout.column().prop(self, "radius", text="Radius")
+    #         layout.column().prop(self, "decay_rad", text="Decay Factor")
+    #         layout.column().prop(self, "midpoint_x", text="X Midpoint")
+    #         layout.column().prop(self, "midpoint_y", text="Y Midpoint")
 
 
     def execute (self, context): 
+        var = context.scene.clouds_var
+
         if self.action == 'CREATE_SPHERES':
-            self.create_spheres()
+            self.create_spheres(var)
         if self.action == 'MERGE_UNION': 
-            self.merge_n_bool(self.names)
+            self.merge_n_bool(self.names, var)
             
         return {'FINISHED'}
     
-    def create_spheres(self): 
+    def create_spheres(self, var): 
         gen_bool = True
 
-        if (self.num_spheres != self.num_spheres_prev 
-            or self.span_x != self.span_x_prev 
-            or self.span_y != self.span_y_prev):
+        if (var.num_spheres != self.num_spheres_prev 
+            or var.span_x != self.span_x_prev 
+            or var.span_y != self.span_y_prev):
             
-            self.num_spheres_prev = self.num_spheres 
-            self.span_x_prev, self.span_y_prev = self.span_x, self.span_y
+            self.num_spheres_prev = var.num_spheres 
+            self.span_x_prev, self.span_y_prev = var.span_x, var.span_y
             self.xyz.clear()
 
         else: 
             gen_bool = not gen_bool
 
-        self.sub_sphere_gen(self.num_spheres, self.span_x, self.span_y, 
-                            self.midpoint_x, self.midpoint_y, self.radius, 
-                            self.decay_rad, gen_bool, self.xyz, self.names)
+        self.sub_sphere_gen(var.num_spheres, var.span_x, var.span_y, 
+                            var.midpoint_x, var.midpoint_y, var.radius, 
+                            var.decay_rad, gen_bool, self.xyz, self.names)
         
     def sub_sphere_gen(self, num_spheres, span_x, span_y, midpoint_x, 
                        midpoint_y, radius, decay_rad, gen_bool, xyz, names): 
@@ -191,25 +194,43 @@ class VIEW3D_PT_sphere_clouds(bpy.types.Panel):
 
     def draw(self, context):
         layout = self.layout
+        scene = context.scene
+        var = scene.clouds_var
         
         # text 
         layout.label(text = "Sphere Clouds")
         # button 
         ######################### add icons  UILayout.operator()
         layout.operator('mesh.sphere_clouds', text='Sphere Clouds').action = 'CREATE_SPHERES'
-        layout.operator('mesh.sphere_clouds', text="Merge n union").action = 'MERGE_UNION'
+        # layout.operator('mesh.sphere_clouds', text="Merge n union").action = 'MERGE_UNION'
+
+        sphere_input = layout.column()
+
+        sphere_input.prop(var, "num_spheres")
+        sphere_input.prop(var, "span_x")
+        sphere_input.prop(var, "span_y")
+        sphere_input.prop(var, "radius")
+        sphere_input.prop(var, "decay_rad")
+        sphere_input.prop(var, "midpoint_x")
+        sphere_input.prop(var, "midpoint_y")
+
         
 def register(): 
     bpy.utils.register_class(MESH_OT_sphere_clouds)
     bpy.utils.register_class(VIEW3D_PT_sphere_clouds)
+    bpy.utils.register_class(properties_sphere_clouds)
+    
+    bpy.types.Scene.clouds_var = bpy.props.PointerProperty(type=properties_sphere_clouds)
 
 def unregister():
     bpy.utils.unregister_class(MESH_OT_sphere_clouds)
     bpy.utils.unregister_class(VIEW3D_PT_sphere_clouds)
+    bpy.utils.register_class(properties_sphere_clouds)
+
+    del bpy.types.Scene.clouds_var
 
 # why does this not work?? 
 # if __name__ == '__main__':
 #   register()
 
-bpy.utils.register_class(MESH_OT_sphere_clouds)
-bpy.utils.register_class(VIEW3D_PT_sphere_clouds)
+register()

@@ -97,7 +97,6 @@ class MESH_OT_sphere_clouds(bpy.types.Operator):
             self.create_spheres()
         if self.action == 'MERGE_UNION': 
             self.merge_n_bool(self.names)
-            
         return {'FINISHED'}
     
     def create_spheres(self): 
@@ -182,6 +181,80 @@ class MESH_OT_sphere_clouds(bpy.types.Operator):
                 last_obj = loop_obj
             names.clear()
     
+class MESH_OT_into_volume(bpy.types.Operator):
+    """lots of spheres for some fluffy clouds pt2"""
+    bl_idname = "mesh.into_volume"
+    bl_label = "Into Volumes"
+    bl_options = {'REGISTER', 'UNDO'}
+
+    action: bpy.props.EnumProperty(
+        name="functions", 
+        description="Steps in buttons",
+        items=[('SUBDIVIDE', 'Subdivide', 'subdivide an object by 2'),
+               ('DiSPLACE', 'Displace', 'displace a selected object'), 
+               ('VOLUME_FORM', 'Volume Time', 'transform an object to volume')]
+    )
+
+
+    # viewed only in 3d viewport
+    # might be no where
+    @classmethod
+    def poll(cls, context): 
+        return context.area.type == 'VIEW_3D'
+
+    def draw(self, context):
+        if self.action == 'SUBDIVIDE':
+            layout = self.layout
+            # text 
+            layout.label(text = "Sphere Cloudssss")
+            # button 
+            # layout.operator('mesh.sphere_clouds', text='Sphere Clouds')
+           
+            layout.column().prop(self, "select_obj", text="select_obj")
+            layout.prop('context.mesh_in_scene', test=" test")
+
+
+
+
+    def execute (self, context): 
+        if self.action == 'SUBDIVIDE':
+            self.subdision_obj()
+        if self.action == 'DiSPLACE': 
+            self.displace_obj()
+        if self.action == 'VOLUME_FORM':
+            self.turn_into_volume()
+        return {'FINISHED'}
+
+    def subdision_obj(self):
+            #         select_obj = bpy.data.objects[names[0]]
+            # bpy.context.view_layer.objects.active = select_obj
+            # last_obj = bpy.context.active_object
+
+            # for each_name in names[1:]: 
+            #     select_obj = bpy.data.objects[each_name]
+            #     bpy.context.view_layer.objects.active = select_obj
+            #     loop_obj = bpy.context.active_object
+                    
+            #     # modifiers with selected obj 
+            # mod_bool = loop_obj.modifiers.new("subdivision", 'SUBSURF') 
+            #     mod_bool.levels = '2'
+            #     mod_bool.object = last_obj
+            #     bpy.ops.object.modifier_apply(modifier="boolean")
+
+            #     del_prev = bpy.data.objects 
+            #     del_prev.remove(del_prev[last_obj.name], do_unlink=True)
+            #     last_obj = loop_obj
+            # names.clear()
+        pass
+
+    def displace_obj(self): 
+        pass
+
+    def turn_into_volume(self):
+        pass
+    
+class PROP_mesh_in_scene(bpy.types.PropertyGroup): 
+    mesh_name: bpy.props.StringProperty()
 
 class VIEW3D_PT_sphere_clouds(bpy.types.Panel): 
     bl_space_type = 'VIEW_3D'
@@ -198,18 +271,28 @@ class VIEW3D_PT_sphere_clouds(bpy.types.Panel):
         ######################### add icons  UILayout.operator()
         layout.operator('mesh.sphere_clouds', text='Sphere Clouds').action = 'CREATE_SPHERES'
         layout.operator('mesh.sphere_clouds', text="Merge n union").action = 'MERGE_UNION'
+        # layout.operator('mesh.into_volume', text="test").action = 'SUBDIVIDE'
+
         
 def register(): 
     bpy.utils.register_class(MESH_OT_sphere_clouds)
     bpy.utils.register_class(VIEW3D_PT_sphere_clouds)
+    bpy.utils.register_class(MESH_OT_into_volume)
+    bpy.utils.register_class(PROP_mesh_in_scene)
+    bpy.types.Scene.mesh_in_scene = bpy.props.CollectionProperty(type=PROP_mesh_in_scene)
+
 
 def unregister():
     bpy.utils.unregister_class(MESH_OT_sphere_clouds)
     bpy.utils.unregister_class(VIEW3D_PT_sphere_clouds)
+    bpy.utils.unregister_class(MESH_OT_into_volume)
+    bpy.utils.unregister_class(PROP_mesh_in_scene)
+
+    del bpy.types.Scene.mesh_in_scene
+
 
 # why does this not work?? 
 # if __name__ == '__main__':
 #   register()
 
-bpy.utils.register_class(MESH_OT_sphere_clouds)
-bpy.utils.register_class(VIEW3D_PT_sphere_clouds)
+register()

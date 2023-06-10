@@ -7,7 +7,7 @@ class properties_sphere_clouds(bpy.types.PropertyGroup):
         name="Count", 
         description="Number of Spheres",
         default=100,
-        min=1, soft_min=50,soft_max=150
+        min=1, soft_min=50, soft_max=150
     )
 
     span_x: bpy.props.FloatProperty(
@@ -77,20 +77,21 @@ class MESH_OT_sphere_clouds(bpy.types.Operator):
     def poll(cls, context): 
         return context.area.type == 'VIEW_3D'
 
-    # def draw(self, context):
-    #     if self.action == 'CREATE_SPHERES':
-    #         layout = self.layout
-    #         # text 
-    #         layout.label(text = "Sphere Cloudssss")
-    #         # button 
-    #         # layout.operator('mesh.sphere_clouds', text='Sphere Clouds')
-    #         layout.column().prop(self, "num_spheres", text="Count")
-    #         layout.column().prop(self, "span_x", text="X Span")
-    #         layout.column().prop(self, "span_y", text="Y Span")
-    #         layout.column().prop(self, "radius", text="Radius")
-    #         layout.column().prop(self, "decay_rad", text="Decay Factor")
-    #         layout.column().prop(self, "midpoint_x", text="X Midpoint")
-    #         layout.column().prop(self, "midpoint_y", text="Y Midpoint")
+    def draw(self, context):
+        var = context.scene.clouds_var
+        if self.action == 'CREATE_SPHERES':
+            layout = self.layout
+            # text 
+            layout.label(text = "Sphere Cloudssss")
+            # button 
+            # layout.operator('mesh.sphere_clouds', text='Sphere Clouds')
+            layout.column().prop(var, "num_spheres", text="Count")
+            layout.column().prop(var, "span_x", text="X Span")
+            layout.column().prop(var, "span_y", text="Y Span")
+            layout.column().prop(var, "radius", text="Radius")
+            layout.column().prop(var, "decay_rad", text="Decay Factor")
+            layout.column().prop(var, "midpoint_x", text="X Midpoint")
+            layout.column().prop(var, "midpoint_y", text="Y Midpoint")
 
 
     def execute (self, context): 
@@ -206,13 +207,13 @@ class VIEW3D_PT_sphere_clouds(bpy.types.Panel):
 
         sphere_input = layout.column()
 
-        sphere_input.prop(var, "num_spheres")
-        sphere_input.prop(var, "span_x")
-        sphere_input.prop(var, "span_y")
-        sphere_input.prop(var, "radius")
-        sphere_input.prop(var, "decay_rad")
-        sphere_input.prop(var, "midpoint_x")
-        sphere_input.prop(var, "midpoint_y")
+        # sphere_input.prop(var, "num_spheres")
+        # sphere_input.prop(var, "span_x")
+        # sphere_input.prop(var, "span_y")
+        # sphere_input.prop(var, "radius")
+        # sphere_input.prop(var, "decay_rad")
+        # sphere_input.prop(var, "midpoint_x")
+        # sphere_input.prop(var, "midpoint_y")
 
         
 def register(): 

@@ -8,54 +8,61 @@ class MESH_OT_sphere_clouds(bpy.types.Operator):
     bl_label = "Sphere Clouds"
     bl_options = {'REGISTER', 'UNDO'}
 
+    action: bpy.props.EnumProperty(
+        name="functions", 
+        description="Steps in buttons",
+        items=[('CREATE_SPHERES', 'Create Spheres', 'establish cloud shape'),
+               ('MERGE_UNION', 'Merge', 'merge all spheres into one mesh')]
+    )
+
     num_spheres_prev = 0
     span_x_prev = 0
     span_y_prev = 0
 
     num_spheres: bpy.props.IntProperty(
-        name="Number of Spheres", 
+        name="Count", 
         description="Number of Spheres",
         default=100,
         min=1, soft_min=50,soft_max=150
     )
 
     span_x: bpy.props.FloatProperty(
-        name="X", 
+        name="X Span", 
         description="Length of the Clouds in the X-direction", 
         default=10,
         min=0, soft_max=15
     )
 
     span_y: bpy.props.FloatProperty(
-        name="Y", 
+        name="Y Span", 
         description="Length of the Clouds in the Y-direction", 
         default=10,
         min=0, soft_max=15
     )
 
     radius: bpy.props.FloatProperty(
-        name="Maximum Radius", 
+        name="Radius", 
         description="Maximum Radius of the Spheres",
         default=2, 
         min=2, soft_max=5
     )
 
     decay_rad: bpy.props.FloatProperty(
-        name="Radius Decay Factor", 
+        name="Decay Factor", 
         description="Exponential Decay of the radius for each spheres", 
         default= 1/2,
         min=0, max= 1
     )
 
     midpoint_x: bpy.props.FloatProperty(
-        name="Midpoint X-Coordinate", 
+        name="X Midpoint", 
         description="X-Coordinate for where the radius is the highest",
         default=0,
         soft_min=-15/2, soft_max=15/2
     )
 
     midpoint_y: bpy.props.FloatProperty(
-        name="Midpoint Y-Corrdinate", 
+        name="Y Midpoint", 
         description="Y-Coordinate for where the radius is the highest",
         default=3,
         soft_min=-15/2, soft_max=15/2
@@ -64,19 +71,36 @@ class MESH_OT_sphere_clouds(bpy.types.Operator):
     xyz = []
     names = []
 
+    # viewed only in 3d viewport
+    @classmethod
+    def poll(cls, context): 
+        return context.area.type == 'VIEW_3D'
 
-    # @classmethod
-    # def poll(cls, context): 
-    #     return context.area.type == 'VIEW_3D'
+    def draw(self, context):
+        if self.action == 'CREATE_SPHERES':
+            layout = self.layout
+            # text 
+            layout.label(text = "Sphere Cloudssss")
+            # button 
+            # layout.operator('mesh.sphere_clouds', text='Sphere Clouds')
+            layout.column().prop(self, "num_spheres", text="Count")
+            layout.column().prop(self, "span_x", text="X Span")
+            layout.column().prop(self, "span_y", text="Y Span")
+            layout.column().prop(self, "radius", text="Radius")
+            layout.column().prop(self, "decay_rad", text="Decay Factor")
+            layout.column().prop(self, "midpoint_x", text="X Midpoint")
+            layout.column().prop(self, "midpoint_y", text="Y Midpoint")
 
-    # def draw(self, context):
-    #     layout = self.layout
-    #     # text 
-    #     layout.label(text = "Sphere Cloudssss")
-    #     # button 
-    #     layout.operator('mesh.sphere_clouds', text='Sphere Clouds')
 
     def execute (self, context): 
+        if self.action == 'CREATE_SPHERES':
+            self.create_spheres()
+        if self.action == 'MERGE_UNION': 
+            self.merge_n_bool(self.names)
+            
+        return {'FINISHED'}
+    
+    def create_spheres(self): 
         gen_bool = True
 
         if (self.num_spheres != self.num_spheres_prev 
@@ -84,28 +108,21 @@ class MESH_OT_sphere_clouds(bpy.types.Operator):
             or self.span_y != self.span_y_prev):
             
             self.num_spheres_prev = self.num_spheres 
-            self.span_x_prev = self.span_x
-            self.span_y_prev = self.span_y
-
+            self.span_x_prev, self.span_y_prev = self.span_x, self.span_y
             self.xyz.clear()
-            self.names.clear()
-        
+
         else: 
             gen_bool = not gen_bool
 
-        self.my_clouds_gen(self.num_spheres, self.span_x, self.span_y, 
-                           self.midpoint_x, self.midpoint_y, self.radius, 
-                           self.decay_rad, gen_bool, self.xyz, self.names)
+        self.sub_sphere_gen(self.num_spheres, self.span_x, self.span_y, 
+                            self.midpoint_x, self.midpoint_y, self.radius, 
+                            self.decay_rad, gen_bool, self.xyz, self.names)
         
-        #how do i make this into a conditional button
-        self.my_merge_n_bool(self.names)
-
-        return {'FINISHED'}
-    
-    def my_clouds_gen(self, num_spheres, span_x, span_y, midpoint_x, midpoint_y, 
-                      radius, decay_rad, gen_bool, xyz, names): 
+    def sub_sphere_gen(self, num_spheres, span_x, span_y, midpoint_x, 
+                       midpoint_y, radius, decay_rad, gen_bool, xyz, names): 
         min_radius = 0.15
         total = num_spheres if gen_bool else len(xyz)
+        names.clear()
 
         for i in range(total): 
             x_val = random.random() * span_x - (span_x/2) 
@@ -114,22 +131,20 @@ class MESH_OT_sphere_clouds(bpy.types.Operator):
 
             if (not gen_bool): 
                 x_val, y_val, z_val = xyz[i][0], xyz[i][1], xyz[i][2]
-                
 
             xy_avg = (abs(x_val + midpoint_x) + abs(y_val + midpoint_y))/2
             
             # y = ab^x (a is size, b percent, x is xy_avg)
             rad = radius * (decay_rad ** xy_avg)
 
-            # small rad are not generated 
+            # very small rad are not generated 
             if (rad > min_radius): 
                 if (gen_bool): 
                     xyz.append([x_val, y_val, z_val])
 
                 z_val = rad + ((z_val * (rad)) - (rad/2))
 
-                # y = log(a)(x - b) + c
-                # y = log(3)(x) + 2
+                # y = log(a)(x - b) + c || y = (log(3)(x) + 2)
                 seg_val = int(math.log(rad, 3) + 3) 
                 seg_val = seg_val if seg_val > 0 else 1
 
@@ -141,25 +156,31 @@ class MESH_OT_sphere_clouds(bpy.types.Operator):
                 loop_obj = bpy.context.active_object
                 names.append(loop_obj.name)
     
-    def my_merge_n_bool(self, names): 
-        # selects last obj created from the cloud_gen method
-        last_obj = bpy.context.active_object
+    def merge_n_bool(self, names): 
+        if (len(names) < 1): 
+            self.report({"ERROR_INVALID_INPUT"}, 
+                        "Spheres needs to be generated first.")
 
-        for each_name in names[:-1]: 
-            select_obj = bpy.data.objects[each_name]
+        else: 
+            select_obj = bpy.data.objects[names[0]]
             bpy.context.view_layer.objects.active = select_obj
-            loop_obj = bpy.context.active_object
-                
-            # modifiers with selected obj 
-            mod_bool = loop_obj.modifiers.new("boolean", 'BOOLEAN') 
-            mod_bool.operation = 'UNION'
-            mod_bool.object = last_obj
-            bpy.ops.object.modifier_apply(modifier="boolean")
+            last_obj = bpy.context.active_object
 
-            del_prev = bpy.data.objects 
-            del_prev.remove(del_prev[last_obj.name], do_unlink=True)
+            for each_name in names[1:]: 
+                select_obj = bpy.data.objects[each_name]
+                bpy.context.view_layer.objects.active = select_obj
+                loop_obj = bpy.context.active_object
+                    
+                # modifiers with selected obj 
+                mod_bool = loop_obj.modifiers.new("boolean", 'BOOLEAN') 
+                mod_bool.operation = 'UNION'
+                mod_bool.object = last_obj
+                bpy.ops.object.modifier_apply(modifier="boolean")
 
-            last_obj = loop_obj
+                del_prev = bpy.data.objects 
+                del_prev.remove(del_prev[last_obj.name], do_unlink=True)
+                last_obj = loop_obj
+            names.clear()
     
 
 class VIEW3D_PT_sphere_clouds(bpy.types.Panel): 
@@ -168,16 +189,15 @@ class VIEW3D_PT_sphere_clouds(bpy.types.Panel):
     bl_category = "Clouds"
     bl_label = "Sphere Clouds"
 
-
     def draw(self, context):
         layout = self.layout
+        
         # text 
         layout.label(text = "Sphere Clouds")
         # button 
-        layout.operator('mesh.sphere_clouds', text='Sphere Clouds')
-
-        # layout.column().prop(context.scene.cursor, "mesh.sphere_clouds", text="Location")
-        # layout.column().prop(MESH_OT_sphere_clouds, "num_spheres", text="Location")
+        ######################### add icons  UILayout.operator()
+        layout.operator('mesh.sphere_clouds', text='Sphere Clouds').action = 'CREATE_SPHERES'
+        layout.operator('mesh.sphere_clouds', text="Merge n union").action = 'MERGE_UNION'
         
 def register(): 
     bpy.utils.register_class(MESH_OT_sphere_clouds)

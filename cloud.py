@@ -14,7 +14,7 @@ class MESH_OT_sphere_clouds(bpy.types.Operator):
         items=[('CREATE_SPHERES', 'Create Spheres', 'establish cloud shape'),
                ('MERGE_UNION', 'Merge', 'merge all spheres into one mesh')]
     )
-
+    
     num_spheres_prev = 0
     span_x_prev = 0
     span_y_prev = 0

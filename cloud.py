@@ -90,6 +90,11 @@ class MESH_OT_sphere_clouds(bpy.types.Operator):
             layout.column().prop(self, "decay_rad", text="Decay Factor")
             layout.column().prop(self, "midpoint_x", text="X Midpoint")
             layout.column().prop(self, "midpoint_y", text="Y Midpoint")
+        if self.action == 'MERGE_UNION':
+            layout = self.layout
+            # text 
+            layout.label(text = "union spheres")
+            
 
 
     def execute (self, context): 
@@ -161,24 +166,31 @@ class MESH_OT_sphere_clouds(bpy.types.Operator):
                         "Spheres needs to be generated first.")
 
         else: 
-            select_obj = bpy.data.objects[names[0]]
+            # find the first on scene sphere
+            pos = 0 
+            while (bpy.context.scene.objects.get(names[pos]) == None): 
+                pos += 1             
+
+            select_obj = bpy.data.objects[names[pos]]
             bpy.context.view_layer.objects.active = select_obj
             last_obj = bpy.context.active_object
 
-            for each_name in names[1:]: 
-                select_obj = bpy.data.objects[each_name]
-                bpy.context.view_layer.objects.active = select_obj
-                loop_obj = bpy.context.active_object
-                    
-                # modifiers with selected obj 
-                mod_bool = loop_obj.modifiers.new("boolean", 'BOOLEAN') 
-                mod_bool.operation = 'UNION'
-                mod_bool.object = last_obj
-                bpy.ops.object.modifier_apply(modifier="boolean")
+            # boolean each one of them 
+            for each_name in names[pos + 1:]: 
+                if (bpy.context.scene.objects.get(each_name) != None):
+                    select_obj = bpy.data.objects[each_name]
+                    bpy.context.view_layer.objects.active = select_obj
+                    loop_obj = bpy.context.active_object
+                        
+                    # modifiers with selected obj 
+                    mod_bool = loop_obj.modifiers.new("boolean", 'BOOLEAN') 
+                    mod_bool.operation = 'UNION'
+                    mod_bool.object = last_obj
+                    bpy.ops.object.modifier_apply(modifier="boolean")
 
-                del_prev = bpy.data.objects 
-                del_prev.remove(del_prev[last_obj.name], do_unlink=True)
-                last_obj = loop_obj
+                    del_prev = bpy.data.objects 
+                    del_prev.remove(del_prev[last_obj.name], do_unlink=True)
+                    last_obj = loop_obj
             names.clear()
     
 class MESH_OT_into_volume(bpy.types.Operator):

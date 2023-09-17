@@ -207,9 +207,5 @@ def unregister():
     bpy.utils.unregister_class(MESH_OT_sphere_clouds)
     bpy.utils.unregister_class(VIEW3D_PT_sphere_clouds)
 
-# why does this not work?? 
-# if __name__ == '__main__':
-#   register()
-
 bpy.utils.register_class(MESH_OT_sphere_clouds)
 bpy.utils.register_class(VIEW3D_PT_sphere_clouds)
